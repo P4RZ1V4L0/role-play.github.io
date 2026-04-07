@@ -1,0 +1,5 @@
+{
+  "name": "Roleplay Studio",
+  "description": "Una aplicación de roleplay offline con almacenamiento local, gestión de personajes e integración con IA.",
+  "requestFramePermissions": []
+}
