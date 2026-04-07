@@ -72,7 +72,8 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
           settings.nsfwEnabled,
           settings.shortWritingEnabled,
           settings.superNsfwEnabled,
-          settings.superNsfwEndpoint
+          settings.superNsfwEndpoint,
+          settings.deepseekApiKey
         );
 
         if (aiResponse) {
@@ -164,7 +165,8 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
         settings.nsfwEnabled,
         settings.shortWritingEnabled,
         settings.superNsfwEnabled,
-        settings.superNsfwEndpoint
+        settings.superNsfwEndpoint,
+        settings.deepseekApiKey
       );
 
       if (aiResponse) {

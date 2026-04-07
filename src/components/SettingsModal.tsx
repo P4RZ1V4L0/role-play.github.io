@@ -10,6 +10,7 @@ export interface AppSettings {
   shortWritingEnabled: boolean;
   superNsfwEnabled: boolean;
   superNsfwEndpoint: string;
+  deepseekApiKey: string;
 }
 
 export const defaultSettings: AppSettings = {
@@ -20,6 +21,7 @@ export const defaultSettings: AppSettings = {
   shortWritingEnabled: false,
   superNsfwEnabled: false,
   superNsfwEndpoint: '',
+  deepseekApiKey: '',
 };
 
 interface SettingsModalProps {
@@ -98,14 +100,24 @@ export function SettingsModal({ onClose, settings, onUpdateSettings }: SettingsM
           {settings.superNsfwEnabled && (
             <div className="p-4 bg-green-500/5 rounded-xl border border-green-500/20 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
               <div>
-                <p className="text-sm font-medium text-green-400">Endpoint Súper NSFW (Opcional)</p>
-                <p className="text-xs text-zinc-500">URL de API externa para el modo ultra explícito.</p>
+                <p className="text-sm font-medium text-green-400">API de DeepSeek (Súper NSFW)</p>
+                <p className="text-xs text-zinc-500">Introduce tu clave de DeepSeek para el modo ultra explícito.</p>
+              </div>
+              <input
+                type="password"
+                value={settings.deepseekApiKey || ''}
+                onChange={(e) => onUpdateSettings({ ...settings, deepseekApiKey: e.target.value })}
+                placeholder="sk-..."
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+              />
+              <div>
+                <p className="text-xs text-zinc-500 mt-2">Endpoint Personalizado (Opcional)</p>
               </div>
               <input
                 type="url"
                 value={settings.superNsfwEndpoint || ''}
                 onChange={(e) => onUpdateSettings({ ...settings, superNsfwEndpoint: e.target.value })}
-                placeholder="https://tu-api-nsfw.com/v1/chat"
+                placeholder="https://api.deepseek.com"
                 className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
               />
             </div>
