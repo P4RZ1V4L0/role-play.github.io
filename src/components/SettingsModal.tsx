@@ -7,6 +7,9 @@ export interface AppSettings {
   imageGenEnabled: boolean;
   imageUploadEnabled: boolean;
   customImageEndpoint: string;
+  shortWritingEnabled: boolean;
+  superNsfwEnabled: boolean;
+  superNsfwEndpoint: string;
 }
 
 export const defaultSettings: AppSettings = {
@@ -14,6 +17,9 @@ export const defaultSettings: AppSettings = {
   imageGenEnabled: false,
   imageUploadEnabled: false,
   customImageEndpoint: '',
+  shortWritingEnabled: false,
+  superNsfwEnabled: false,
+  superNsfwEndpoint: '',
 };
 
 interface SettingsModalProps {
@@ -59,6 +65,73 @@ export function SettingsModal({ onClose, settings, onUpdateSettings }: SettingsM
               <div className={cn(
                 "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform",
                 settings.nsfwEnabled ? "translate-x-6" : "translate-x-0"
+              )} />
+            </button>
+          </div>
+
+          {/* Super NSFW Toggle */}
+          <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl border border-zinc-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                <ShieldAlert size={20} className="text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-100">Súper NSFW</p>
+                <p className="text-xs text-zinc-500">Modo ultra explícito sin restricciones. Color gris en chat.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => toggleSetting('superNsfwEnabled')}
+              className={cn(
+                "w-12 h-6 rounded-full transition-colors relative flex-shrink-0",
+                settings.superNsfwEnabled ? "bg-green-600" : "bg-zinc-700"
+              )}
+            >
+              <div className={cn(
+                "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform",
+                settings.superNsfwEnabled ? "translate-x-6" : "translate-x-0"
+              )} />
+            </button>
+          </div>
+
+          {/* Super NSFW Endpoint */}
+          {settings.superNsfwEnabled && (
+            <div className="p-4 bg-green-500/5 rounded-xl border border-green-500/20 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div>
+                <p className="text-sm font-medium text-green-400">Endpoint Súper NSFW (Opcional)</p>
+                <p className="text-xs text-zinc-500">URL de API externa para el modo ultra explícito.</p>
+              </div>
+              <input
+                type="url"
+                value={settings.superNsfwEndpoint || ''}
+                onChange={(e) => onUpdateSettings({ ...settings, superNsfwEndpoint: e.target.value })}
+                placeholder="https://tu-api-nsfw.com/v1/chat"
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+              />
+            </div>
+          )}
+
+          {/* Short Writing Toggle */}
+          <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl border border-zinc-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <Upload size={20} className="text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-100">Escritura Corta</p>
+                <p className="text-xs text-zinc-500">La IA responderá de forma más concisa y directa.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => toggleSetting('shortWritingEnabled')}
+              className={cn(
+                "w-12 h-6 rounded-full transition-colors relative flex-shrink-0",
+                settings.shortWritingEnabled ? "bg-blue-600" : "bg-zinc-700"
+              )}
+            >
+              <div className={cn(
+                "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform",
+                settings.shortWritingEnabled ? "translate-x-6" : "translate-x-0"
               )} />
             </button>
           </div>

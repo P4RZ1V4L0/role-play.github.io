@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { AppSettings } from './SettingsModal';
 import { ConfirmModal } from './ConfirmModal';
+import { CharacterProfileModal } from './CharacterProfileModal';
 
 interface ChatWindowProps {
   character: Character;
@@ -20,6 +21,7 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
   const [selectedImage, setSelectedImage] = useState<string | undefined>();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [viewingProfile, setViewingProfile] = useState<Character | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const messages = useLiveQuery(
@@ -67,7 +69,10 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
           history,
           currentInput,
           currentImage,
-          settings.nsfwEnabled
+          settings.nsfwEnabled,
+          settings.shortWritingEnabled,
+          settings.superNsfwEnabled,
+          settings.superNsfwEndpoint
         );
 
         if (aiResponse) {
@@ -76,6 +81,7 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
             text: aiResponse,
             timestamp: Date.now(),
             role: 'assistant',
+            isSuperNsfw: settings.superNsfwEnabled
           });
         }
       } catch (error) {
@@ -116,13 +122,14 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
       const recentMessages = (messages || []).slice(-4).map(m => `${m.role === 'user' ? 'User' : character.name}: ${m.text}`).join('\n');
       const enhancedPrompt = `A visual scene featuring ${character.name}. Character description: ${character.description}. Recent conversation context: "${recentMessages}". ${currentInput ? `Specific action/request: ${currentInput}.` : 'Generate an image representing the current moment in the conversation.'} High quality, detailed, masterpiece.`;
 
-      const imageUrl = await generateImage(enhancedPrompt, settings.nsfwEnabled, settings.customImageEndpoint);
+      const imageUrl = await generateImage(enhancedPrompt, settings.nsfwEnabled, settings.customImageEndpoint, settings.superNsfwEnabled, settings.superNsfwEndpoint);
       await db.messages.add({
         characterId: character.id!,
         text: '',
         image: imageUrl,
         timestamp: Date.now(),
         role: 'assistant',
+        isSuperNsfw: settings.superNsfwEnabled
       });
     } catch (error: any) {
       console.error(error);
@@ -134,6 +141,44 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
       } else {
         setErrorMsg(error?.message || "Error al generar la imagen. Intenta con otro prompt o revisa la configuración de tu endpoint.");
       }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleContinue = async () => {
+    if (isGenerating || !character.isAI) return;
+    setIsGenerating(true);
+    try {
+      const history = (messages || []).slice(-10).map(m => ({
+        role: m.role,
+        text: m.text,
+        image: m.image
+      }));
+
+      const aiResponse = await generateRoleplayResponse(
+        character.systemPrompt || `Eres ${character.name}. ${character.description}`,
+        history,
+        "(Continúa la historia/conversación)",
+        undefined,
+        settings.nsfwEnabled,
+        settings.shortWritingEnabled,
+        settings.superNsfwEnabled,
+        settings.superNsfwEndpoint
+      );
+
+      if (aiResponse) {
+        await db.messages.add({
+          characterId: character.id!,
+          text: aiResponse,
+          timestamp: Date.now(),
+          role: 'assistant',
+          isSuperNsfw: settings.superNsfwEnabled
+        });
+      }
+    } catch (error: any) {
+      console.error(error);
+      setErrorMsg("Error al continuar la respuesta.");
     } finally {
       setIsGenerating(false);
     }
@@ -157,7 +202,10 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
               <ArrowLeft size={20} />
             </button>
           )}
-          <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden flex items-center justify-center">
+          <div 
+            className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden flex items-center justify-center cursor-pointer hover:border-blue-500/50 transition-colors"
+            onClick={() => setViewingProfile(character)}
+          >
             {character.icon ? (
               <img src={character.icon} alt={character.name} className="w-full h-full object-cover" />
             ) : (
@@ -194,12 +242,15 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
                 msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
               )}
             >
-              <div className={cn(
-                "w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border",
-                msg.role === 'user' 
-                  ? "bg-blue-600 border-blue-500" 
-                  : "bg-zinc-800 border-zinc-700 overflow-hidden"
-              )}>
+              <div 
+                className={cn(
+                  "w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border",
+                  msg.role === 'user' 
+                    ? "bg-blue-600 border-blue-500" 
+                    : "bg-zinc-800 border-zinc-700 overflow-hidden cursor-pointer hover:border-blue-500/50 transition-colors"
+                )}
+                onClick={() => msg.role === 'assistant' && setViewingProfile(character)}
+              >
                 {msg.role === 'user' ? (
                   <User size={16} className="text-white" />
                 ) : character.icon ? (
@@ -212,7 +263,9 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
                 "p-3 rounded-2xl text-sm leading-relaxed",
                 msg.role === 'user'
                   ? "bg-blue-600 text-white rounded-tr-none"
-                  : "bg-zinc-900 text-zinc-100 border border-zinc-800 rounded-tl-none"
+                  : msg.isSuperNsfw 
+                    ? "bg-zinc-700 text-zinc-100 border border-zinc-600 rounded-tl-none"
+                    : "bg-zinc-900 text-zinc-100 border border-zinc-800 rounded-tl-none"
               )}>
                 {msg.image && (
                   <img src={msg.image} alt="Contenido adjunto" className="max-w-full rounded-lg mb-2 object-contain max-h-64" />
@@ -234,7 +287,19 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
+          {/* Continue Button */}
+          {messages && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && !isGenerating && (
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={handleContinue}
+                className="flex items-center gap-2 px-4 py-1.5 bg-zinc-900/50 hover:bg-zinc-800 border border-zinc-800 rounded-full text-xs text-zinc-400 hover:text-zinc-100 transition-all shadow-lg backdrop-blur-sm"
+              >
+                <Sparkles size={14} className="text-blue-400" />
+                Continuar respuesta
+              </button>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
@@ -310,6 +375,13 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
           confirmText="Vaciar"
           onConfirm={confirmClearChat}
           onCancel={() => setShowClearConfirm(false)}
+        />
+      )}
+
+      {viewingProfile && (
+        <CharacterProfileModal
+          character={viewingProfile}
+          onClose={() => setViewingProfile(null)}
         />
       )}
     </div>

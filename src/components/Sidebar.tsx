@@ -4,6 +4,7 @@ import { db, type Character } from '../db';
 import { Plus, User, Bot, Settings, Trash2, Edit2, MessageSquare } from 'lucide-react';
 import { CharacterForm } from './CharacterForm';
 import { ConfirmModal } from './ConfirmModal';
+import { CharacterProfileModal } from './CharacterProfileModal';
 import { cn } from '../lib/utils';
 
 interface SidebarProps {
@@ -16,6 +17,7 @@ export function Sidebar({ selectedCharacterId, onSelectCharacter, onOpenSettings
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCharacter, setEditingCharacter] = useState<Character | undefined>();
   const [characterToDelete, setCharacterToDelete] = useState<number | null>(null);
+  const [viewingProfile, setViewingProfile] = useState<Character | null>(null);
 
   const characters = useLiveQuery(() => db.characters.toArray());
 
@@ -75,7 +77,13 @@ export function Sidebar({ selectedCharacterId, onSelectCharacter, onOpenSettings
                   : "bg-transparent border-transparent hover:bg-zinc-800/50 text-zinc-400 hover:text-zinc-100"
               )}
             >
-              <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden flex items-center justify-center flex-shrink-0">
+              <div 
+                className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden flex items-center justify-center flex-shrink-0 cursor-pointer hover:border-blue-500/50 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setViewingProfile(char);
+                }}
+              >
                 {char.icon ? (
                   <img src={char.icon} alt={char.name} className="w-full h-full object-cover" />
                 ) : (
@@ -133,6 +141,13 @@ export function Sidebar({ selectedCharacterId, onSelectCharacter, onOpenSettings
           confirmText="Eliminar"
           onConfirm={confirmDelete}
           onCancel={() => setCharacterToDelete(null)}
+        />
+      )}
+
+      {viewingProfile && (
+        <CharacterProfileModal
+          character={viewingProfile}
+          onClose={() => setViewingProfile(null)}
         />
       )}
     </div>
