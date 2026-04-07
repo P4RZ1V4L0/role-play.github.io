@@ -70,8 +70,7 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
           currentInput,
           currentImage,
           settings.nsfwEnabled,
-          settings.shortWritingEnabled,
-          settings.superNsfwEnabled
+          settings.shortWritingEnabled
         );
 
         if (aiResponse) {
@@ -80,12 +79,10 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
             text: aiResponse,
             timestamp: Date.now(),
             role: 'assistant',
-            isSuperNsfw: settings.superNsfwEnabled
           });
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error("Error generating AI response:", error);
-        setErrorMsg(error.message || "Error al generar la respuesta de la IA.");
       } finally {
         setIsGenerating(false);
       }
@@ -122,14 +119,13 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
       const recentMessages = (messages || []).slice(-4).map(m => `${m.role === 'user' ? 'User' : character.name}: ${m.text}`).join('\n');
       const enhancedPrompt = `A visual scene featuring ${character.name}. Character description: ${character.description}. Recent conversation context: "${recentMessages}". ${currentInput ? `Specific action/request: ${currentInput}.` : 'Generate an image representing the current moment in the conversation.'} High quality, detailed, masterpiece.`;
 
-      const imageUrl = await generateImage(enhancedPrompt, settings.nsfwEnabled, settings.customImageEndpoint, settings.superNsfwEnabled);
+      const imageUrl = await generateImage(enhancedPrompt, settings.nsfwEnabled, settings.customImageEndpoint);
       await db.messages.add({
         characterId: character.id!,
         text: '',
         image: imageUrl,
         timestamp: Date.now(),
         role: 'assistant',
-        isSuperNsfw: settings.superNsfwEnabled
       });
     } catch (error: any) {
       console.error(error);
@@ -162,8 +158,7 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
         "(Continúa la historia/conversación)",
         undefined,
         settings.nsfwEnabled,
-        settings.shortWritingEnabled,
-        settings.superNsfwEnabled
+        settings.shortWritingEnabled
       );
 
       if (aiResponse) {
@@ -172,7 +167,6 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
           text: aiResponse,
           timestamp: Date.now(),
           role: 'assistant',
-          isSuperNsfw: settings.superNsfwEnabled
         });
       }
     } catch (error: any) {
@@ -262,9 +256,7 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
                 "p-3 rounded-2xl text-sm leading-relaxed",
                 msg.role === 'user'
                   ? "bg-blue-600 text-white rounded-tr-none"
-                  : msg.isSuperNsfw 
-                    ? "bg-zinc-700 text-zinc-100 border border-zinc-600 rounded-tl-none"
-                    : "bg-zinc-900 text-zinc-100 border border-zinc-800 rounded-tl-none"
+                  : "bg-zinc-900 text-zinc-100 border border-zinc-800 rounded-tl-none"
               )}>
                 {msg.image && (
                   <img src={msg.image} alt="Contenido adjunto" className="max-w-full rounded-lg mb-2 object-contain max-h-64" />

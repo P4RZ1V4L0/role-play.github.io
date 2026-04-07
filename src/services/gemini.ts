@@ -8,8 +8,7 @@ export async function generateRoleplayResponse(
   userMessage: string,
   userImage?: string,
   nsfwEnabled: boolean = false,
-  shortWritingEnabled: boolean = false,
-  superNsfwEnabled: boolean = false
+  shortWritingEnabled: boolean = false
 ) {
   if (!apiKey) {
     throw new Error("API Key not found");
@@ -45,16 +44,11 @@ export async function generateRoleplayResponse(
     contents.push({ role: 'user', parts: currentUserParts });
   }
 
-  const safetySettings = superNsfwEnabled ? [
+  const safetySettings = nsfwEnabled ? [
     { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
     { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
     { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
     { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-  ] : nsfwEnabled ? [
-    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
   ] : undefined;
 
   const model = ai.models.generateContent({
@@ -68,29 +62,16 @@ export async function generateRoleplayResponse(
   });
 
   const response = await model;
-  
-  // Extraer el texto de la respuesta de forma segura
-  const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text;
-  
-  if (!text) {
-    console.error("Respuesta vacía de la IA:", response);
-    const finishReason = response.candidates?.[0]?.finishReason;
-    if (finishReason === 'SAFETY') {
-      throw new Error("La respuesta fue bloqueada por los filtros de seguridad de la IA. Prueba activando el modo NSFW.");
-    }
-    throw new Error("La IA no devolvió ninguna respuesta. Intenta de nuevo.");
-  }
-
-  return typeof text === 'function' ? (text as Function)() : text;
+  return response.text;
 }
 
-export async function generateImage(prompt: string, nsfwEnabled: boolean = false, customEndpoint?: string, superNsfwEnabled: boolean = false) {
+export async function generateImage(prompt: string, nsfwEnabled: boolean = false, customEndpoint?: string) {
   if (customEndpoint && customEndpoint.trim() !== '') {
     try {
       const response = await fetch(customEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, nsfwEnabled, superNsfwEnabled })
+        body: JSON.stringify({ prompt, nsfwEnabled })
       });
       
       if (!response.ok) {
@@ -125,16 +106,11 @@ export async function generateImage(prompt: string, nsfwEnabled: boolean = false
   if (!apiKey) throw new Error("API Key not found");
   const ai = new GoogleGenAI({ apiKey });
   
-  const safetySettings = superNsfwEnabled ? [
+  const safetySettings = nsfwEnabled ? [
     { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
     { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
     { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
     { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-  ] : nsfwEnabled ? [
-    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
   ] : undefined;
 
   const response = await ai.models.generateContent({

@@ -16,7 +16,6 @@ export interface Message {
   timestamp: number;
   role: 'user' | 'assistant' | 'system';
   image?: string;
-  isSuperNsfw?: boolean;
 }
 
 export class RoleplayDB extends Dexie {

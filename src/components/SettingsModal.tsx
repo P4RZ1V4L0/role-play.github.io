@@ -8,9 +8,6 @@ export interface AppSettings {
   imageUploadEnabled: boolean;
   customImageEndpoint: string;
   shortWritingEnabled: boolean;
-  superNsfwEnabled: boolean;
-  superNsfwEndpoint: string;
-  deepseekApiKey: string;
 }
 
 export const defaultSettings: AppSettings = {
@@ -19,9 +16,6 @@ export const defaultSettings: AppSettings = {
   imageUploadEnabled: false,
   customImageEndpoint: '',
   shortWritingEnabled: false,
-  superNsfwEnabled: false,
-  superNsfwEndpoint: '',
-  deepseekApiKey: '',
 };
 
 interface SettingsModalProps {
@@ -70,58 +64,6 @@ export function SettingsModal({ onClose, settings, onUpdateSettings }: SettingsM
               )} />
             </button>
           </div>
-
-          {/* Super NSFW Toggle */}
-          <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl border border-zinc-800">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                <ShieldAlert size={20} className="text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-zinc-100">Súper NSFW</p>
-                <p className="text-xs text-zinc-500">Modo ultra explícito sin restricciones. Color gris en chat.</p>
-              </div>
-            </div>
-            <button
-              onClick={() => toggleSetting('superNsfwEnabled')}
-              className={cn(
-                "w-12 h-6 rounded-full transition-colors relative flex-shrink-0",
-                settings.superNsfwEnabled ? "bg-green-600" : "bg-zinc-700"
-              )}
-            >
-              <div className={cn(
-                "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform",
-                settings.superNsfwEnabled ? "translate-x-6" : "translate-x-0"
-              )} />
-            </button>
-          </div>
-
-          {/* Super NSFW Endpoint */}
-          {settings.superNsfwEnabled && (
-            <div className="p-4 bg-green-500/5 rounded-xl border border-green-500/20 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div>
-                <p className="text-sm font-medium text-green-400">API de DeepSeek (Súper NSFW)</p>
-                <p className="text-xs text-zinc-500">Introduce tu clave de DeepSeek para el modo ultra explícito.</p>
-              </div>
-              <input
-                type="password"
-                value={settings.deepseekApiKey || ''}
-                onChange={(e) => onUpdateSettings({ ...settings, deepseekApiKey: e.target.value })}
-                placeholder="sk-..."
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
-              />
-              <div>
-                <p className="text-xs text-zinc-500 mt-2">Endpoint Personalizado (Opcional)</p>
-              </div>
-              <input
-                type="url"
-                value={settings.superNsfwEndpoint || ''}
-                onChange={(e) => onUpdateSettings({ ...settings, superNsfwEndpoint: e.target.value })}
-                placeholder="https://api.deepseek.com"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
-              />
-            </div>
-          )}
 
           {/* Short Writing Toggle */}
           <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl border border-zinc-800">
