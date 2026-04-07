@@ -71,7 +71,9 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
           currentImage,
           settings.nsfwEnabled,
           settings.shortWritingEnabled,
-          settings.superNsfwEnabled
+          settings.superNsfwEnabled,
+          settings.superNsfwEndpoint,
+          settings.deepseekApiKey
         );
 
         if (aiResponse) {
@@ -121,7 +123,7 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
       const recentMessages = (messages || []).slice(-4).map(m => `${m.role === 'user' ? 'User' : character.name}: ${m.text}`).join('\n');
       const enhancedPrompt = `A visual scene featuring ${character.name}. Character description: ${character.description}. Recent conversation context: "${recentMessages}". ${currentInput ? `Specific action/request: ${currentInput}.` : 'Generate an image representing the current moment in the conversation.'} High quality, detailed, masterpiece.`;
 
-      const imageUrl = await generateImage(enhancedPrompt, settings.nsfwEnabled, settings.customImageEndpoint, settings.superNsfwEnabled);
+      const imageUrl = await generateImage(enhancedPrompt, settings.nsfwEnabled, settings.customImageEndpoint, settings.superNsfwEnabled, settings.superNsfwEndpoint);
       await db.messages.add({
         characterId: character.id!,
         text: '',
@@ -162,7 +164,9 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
         undefined,
         settings.nsfwEnabled,
         settings.shortWritingEnabled,
-        settings.superNsfwEnabled
+        settings.superNsfwEnabled,
+        settings.superNsfwEndpoint,
+        settings.deepseekApiKey
       );
 
       if (aiResponse) {
