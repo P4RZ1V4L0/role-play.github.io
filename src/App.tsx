@@ -9,13 +9,50 @@ import { db } from './db';
 import { Sidebar } from './components/Sidebar';
 import { ChatWindow } from './components/ChatWindow';
 import { SettingsModal, type AppSettings, defaultSettings } from './components/SettingsModal';
-import { MessageSquare, UserPlus } from 'lucide-react';
+import { MessageSquare, UserPlus, Key } from 'lucide-react';
 import { cn } from './lib/utils';
+
+declare global {
+  interface Window {
+    aistudio?: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
+  }
+}
 
 export default function App() {
   const [selectedCharacterId, setSelectedCharacterId] = useState<number | undefined>();
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [hasKey, setHasKey] = useState<boolean>(true);
+  const [isCheckingKey, setIsCheckingKey] = useState(true);
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if (window.aistudio?.hasSelectedApiKey) {
+        try {
+          const selected = await window.aistudio.hasSelectedApiKey();
+          setHasKey(selected);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      setIsCheckingKey(false);
+    };
+    checkKey();
+  }, []);
+
+  const handleSelectKey = async () => {
+    if (window.aistudio?.openSelectKey) {
+      try {
+        await window.aistudio.openSelectKey();
+        setHasKey(true);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('roleplay_settings');
@@ -37,6 +74,36 @@ export default function App() {
     () => selectedCharacterId ? db.characters.get(selectedCharacterId) : undefined,
     [selectedCharacterId]
   );
+
+  if (isCheckingKey) {
+    return <div className="flex h-screen w-full bg-zinc-950 items-center justify-center text-zinc-500">Cargando...</div>;
+  }
+
+  if (!hasKey) {
+    return (
+      <div className="flex h-screen w-full bg-zinc-950 items-center justify-center p-4">
+        <div className="bg-zinc-900 p-8 rounded-2xl border border-zinc-800 max-w-md text-center shadow-2xl">
+          <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Key size={32} className="text-blue-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-zinc-100 mb-4">Se requiere Clave de API</h2>
+          <p className="text-zinc-400 mb-6 text-sm leading-relaxed">
+            Para usar las funciones avanzadas de generación de imágenes de esta aplicación, necesitas seleccionar una clave de API de Google Cloud con facturación habilitada.
+            <br /><br />
+            <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">
+              Más información sobre facturación
+            </a>
+          </p>
+          <button 
+            onClick={handleSelectKey}
+            className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors"
+          >
+            Seleccionar Clave de API
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full bg-zinc-950 overflow-hidden">

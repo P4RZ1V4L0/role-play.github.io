@@ -116,7 +116,7 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
       const recentMessages = (messages || []).slice(-4).map(m => `${m.role === 'user' ? 'User' : character.name}: ${m.text}`).join('\n');
       const enhancedPrompt = `A visual scene featuring ${character.name}. Character description: ${character.description}. Recent conversation context: "${recentMessages}". ${currentInput ? `Specific action/request: ${currentInput}.` : 'Generate an image representing the current moment in the conversation.'} High quality, detailed, masterpiece.`;
 
-      const imageUrl = await generateImage(enhancedPrompt, settings.nsfwEnabled);
+      const imageUrl = await generateImage(enhancedPrompt, settings.nsfwEnabled, settings.customImageEndpoint);
       await db.messages.add({
         characterId: character.id!,
         text: '',
@@ -124,9 +124,16 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
         timestamp: Date.now(),
         role: 'assistant',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      setErrorMsg("Error al generar la imagen. Intenta con otro prompt o revisa las políticas de contenido.");
+      if (error?.message?.includes("Requested entity was not found") || error?.message?.includes("403") || error?.message?.includes("PERMISSION_DENIED")) {
+        setErrorMsg("Error de permisos. Es posible que necesites seleccionar una clave de API válida o tu clave no tiene acceso a este modelo.");
+        if (window.aistudio?.openSelectKey) {
+           window.aistudio.openSelectKey().catch(console.error);
+        }
+      } else {
+        setErrorMsg(error?.message || "Error al generar la imagen. Intenta con otro prompt o revisa la configuración de tu endpoint.");
+      }
     } finally {
       setIsGenerating(false);
     }

@@ -62,7 +62,44 @@ export async function generateRoleplayResponse(
   return response.text;
 }
 
-export async function generateImage(prompt: string, nsfwEnabled: boolean = false) {
+export async function generateImage(prompt: string, nsfwEnabled: boolean = false, customEndpoint?: string) {
+  if (customEndpoint && customEndpoint.trim() !== '') {
+    try {
+      const response = await fetch(customEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, nsfwEnabled })
+      });
+      
+      if (!response.ok) {
+        let errorDetails = '';
+        try {
+          errorDetails = await response.text();
+        } catch (e) {}
+        throw new Error(`Error en el endpoint personalizado (${response.status}): ${errorDetails || response.statusText}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        const imageUrl = data.image || data.imageUrl || data.url || data.output || data.base64;
+        if (!imageUrl) throw new Error("Formato de respuesta no reconocido. Se esperaba un JSON con 'image', 'imageUrl', 'url' o 'base64'.");
+        return imageUrl;
+      } else {
+        const blob = await response.blob();
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+    } catch (error: any) {
+      console.error("Custom endpoint error:", error);
+      throw new Error(error.message || "Error de conexión con el endpoint personalizado. Verifica la URL y los permisos CORS.");
+    }
+  }
+
   if (!apiKey) throw new Error("API Key not found");
   const ai = new GoogleGenAI({ apiKey });
   

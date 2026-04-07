@@ -6,12 +6,14 @@ export interface AppSettings {
   nsfwEnabled: boolean;
   imageGenEnabled: boolean;
   imageUploadEnabled: boolean;
+  customImageEndpoint: string;
 }
 
 export const defaultSettings: AppSettings = {
   nsfwEnabled: false,
   imageGenEnabled: false,
   imageUploadEnabled: false,
+  customImageEndpoint: '',
 };
 
 interface SettingsModalProps {
@@ -85,6 +87,23 @@ export function SettingsModal({ onClose, settings, onUpdateSettings }: SettingsM
               )} />
             </button>
           </div>
+
+          {/* Custom Image Endpoint */}
+          {settings.imageGenEnabled && (
+            <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-800 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div>
+                <p className="text-sm font-medium text-zinc-100">Endpoint Personalizado (Opcional)</p>
+                <p className="text-xs text-zinc-500">URL de tu propia API para generar imágenes (ej. alojada en Vercel).</p>
+              </div>
+              <input
+                type="url"
+                value={settings.customImageEndpoint || ''}
+                onChange={(e) => onUpdateSettings({ ...settings, customImageEndpoint: e.target.value })}
+                placeholder="https://tu-api.com/generate"
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+              />
+            </div>
+          )}
 
           {/* Image Upload Toggle */}
           <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl border border-zinc-800">
