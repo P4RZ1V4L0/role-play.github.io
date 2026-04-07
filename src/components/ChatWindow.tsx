@@ -98,20 +98,25 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
   };
 
   const handleGenerateImage = async () => {
-    if (!inputText.trim() || isGenerating) return;
+    if (isGenerating || (!inputText.trim() && (!messages || messages.length === 0))) return;
     setIsGenerating(true);
     try {
-      const userMessage: Message = {
-        characterId: character.id!,
-        text: `[Solicitud de imagen]: ${inputText}`,
-        timestamp: Date.now(),
-        role: 'user',
-      };
-      await db.messages.add(userMessage);
-      const currentInput = inputText;
-      setInputText('');
+      const currentInput = inputText.trim();
+      if (currentInput) {
+        const userMessage: Message = {
+          characterId: character.id!,
+          text: `[Solicitud de imagen]: ${currentInput}`,
+          timestamp: Date.now(),
+          role: 'user',
+        };
+        await db.messages.add(userMessage);
+        setInputText('');
+      }
 
-      const imageUrl = await generateImage(currentInput);
+      const recentMessages = (messages || []).slice(-4).map(m => `${m.role === 'user' ? 'User' : character.name}: ${m.text}`).join('\n');
+      const enhancedPrompt = `A visual scene featuring ${character.name}. Character description: ${character.description}. Recent conversation context: "${recentMessages}". ${currentInput ? `Specific action/request: ${currentInput}.` : 'Generate an image representing the current moment in the conversation.'} High quality, detailed, masterpiece.`;
+
+      const imageUrl = await generateImage(enhancedPrompt, settings.nsfwEnabled);
       await db.messages.add({
         characterId: character.id!,
         text: '',
@@ -121,7 +126,7 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
       });
     } catch (error) {
       console.error(error);
-      setErrorMsg("Error al generar la imagen. Intenta con otro prompt.");
+      setErrorMsg("Error al generar la imagen. Intenta con otro prompt o revisa las políticas de contenido.");
     } finally {
       setIsGenerating(false);
     }
@@ -277,8 +282,8 @@ export function ChatWindow({ character, onBack, settings }: ChatWindowProps) {
               <button
                 type="button"
                 onClick={handleGenerateImage}
-                disabled={!inputText.trim() || isGenerating}
-                title="Generar imagen con el texto actual"
+                disabled={isGenerating || (!inputText.trim() && (!messages || messages.length === 0))}
+                title="Generar imagen de la escena actual"
                 className="w-10 h-10 flex-shrink-0 rounded-full bg-purple-600/20 border border-purple-500/30 hover:bg-purple-600/40 text-purple-400 disabled:opacity-50 flex items-center justify-center transition-all"
               >
                 <ImageIcon size={18} />

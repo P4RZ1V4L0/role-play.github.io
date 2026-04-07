@@ -62,15 +62,23 @@ export async function generateRoleplayResponse(
   return response.text;
 }
 
-export async function generateImage(prompt: string) {
+export async function generateImage(prompt: string, nsfwEnabled: boolean = false) {
   if (!apiKey) throw new Error("API Key not found");
   const ai = new GoogleGenAI({ apiKey });
   
+  const safetySettings = nsfwEnabled ? [
+    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+  ] : undefined;
+
   const response = await ai.models.generateContent({
     model: 'gemini-3.1-flash-image-preview',
     contents: { parts: [{ text: prompt }] },
     config: {
-      imageConfig: { aspectRatio: "1:1", imageSize: "1K" }
+      imageConfig: { aspectRatio: "1:1", imageSize: "1K" },
+      safetySettings,
     }
   });
   
