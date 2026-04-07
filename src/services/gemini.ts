@@ -68,7 +68,20 @@ export async function generateRoleplayResponse(
   });
 
   const response = await model;
-  return response.text;
+  
+  // Extraer el texto de la respuesta de forma segura
+  const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text;
+  
+  if (!text) {
+    console.error("Respuesta vacía de la IA:", response);
+    const finishReason = response.candidates?.[0]?.finishReason;
+    if (finishReason === 'SAFETY') {
+      throw new Error("La respuesta fue bloqueada por los filtros de seguridad de la IA. Prueba activando el modo NSFW.");
+    }
+    throw new Error("La IA no devolvió ninguna respuesta. Intenta de nuevo.");
+  }
+
+  return typeof text === 'function' ? (text as Function)() : text;
 }
 
 export async function generateImage(prompt: string, nsfwEnabled: boolean = false, customEndpoint?: string, superNsfwEnabled: boolean = false) {
